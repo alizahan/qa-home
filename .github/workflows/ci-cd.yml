@@ -1,0 +1,124 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  playwright-ui-tests:
+    name: Playwright UI Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: ui-tests/package-lock.json
+
+      - name: Install Playwright dependencies
+        working-directory: ./ui-tests
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: ./ui-tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        working-directory: ./ui-tests
+        run: npm test
+
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: ui-tests/playwright-report/
+          retention-days: 30
+
+      - name: Upload Playwright test results (HTML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-html-report
+          path: ui-tests/playwright-report/index.html
+          retention-days: 30
+
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: ui-tests/allure-results/
+          retention-days: 30
+
+  postman-api-tests:
+    name: Postman API Tests (Newman)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: api-tests/package-lock.json
+
+      - name: Install Newman dependencies
+        working-directory: ./api-tests
+        run: npm ci
+
+      - name: Run Newman tests
+        working-directory: ./api-tests
+        run: |
+          npx newman run "collection/Simple Grocery Store API - Automation.postman_collection.json" \
+            --reporters cli,htmlextra \
+            --reporter-htmlextra-export report.html \
+            --reporter-htmlextra-title "API Test Report" \
+            --reporter-htmlextra-browserTitle "API Test Results" \
+            --reporter-htmlextra-showOnlyFails false \
+            --reporter-htmlextra-hideRequestBody false \
+            --reporter-htmlextra-hideResponseBody false
+
+      - name: Upload Newman test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-report
+          path: api-tests/report.html
+          retention-days: 30
+
+      - name: Upload Newman JSON results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-json-results
+          path: api-tests/
+          retention-days: 30
+        continue-on-error: true
+
+  k6-performance-tests:
+    name: k6 Performance Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run k6 performance tests
+        uses: grafana/k6-action@v0.3.0
+        with:
+          filename: performance-tests/create-order.test.js
+
+      - name: Upload k6 performance test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-performance-report
+          path: performance-tests/summary.html
+          retention-days: 30
