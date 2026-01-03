@@ -99,11 +99,10 @@ jobs:
 
       - name: Upload Newman test results
         if: always()
-        working-directory: ./${{ steps.find-dir.outputs.dir }}
         uses: actions/upload-artifact@v4
         with:
           name: newman-report
-          path: report.html
+          path: ${{ steps.find-dir.outputs.dir }}/report.html
           retention-days: 30
           if-no-files-found: warn
 
