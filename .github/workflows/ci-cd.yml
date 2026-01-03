@@ -97,22 +97,27 @@ jobs:
             --reporter-htmlextra-hideRequestBody false \
             --reporter-htmlextra-hideResponseBody false
 
-      - name: Verify report.html location
+      - name: Find and prepare report.html
+        id: find-report
         run: |
           echo "Looking for report.html..."
-          find . -name "report.html" -type f 2>/dev/null || echo "report.html not found"
-          ls -la ${{ steps.find-dir.outputs.dir }}/report.html 2>/dev/null || echo "Not found at expected path"
+          REPORT_PATH=$(find . -name "report.html" -type f 2>/dev/null | head -1)
+          if [ -n "$REPORT_PATH" ]; then
+            echo "Found report at: $REPORT_PATH"
+            echo "path=$REPORT_PATH" >> $GITHUB_OUTPUT
+            echo "found=true" >> $GITHUB_OUTPUT
+          else
+            echo "report.html not found"
+            echo "found=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Upload Newman test results
-        if: always()
+        if: always() && steps.find-report.outputs.found == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: newman-report
-          path: |
-            ${{ steps.find-dir.outputs.dir }}/report.html
-            **/report.html
+          path: ${{ steps.find-report.outputs.path }}
           retention-days: 30
-          if-no-files-found: warn
 
       - name: Upload Newman JSON results
         if: always()
