@@ -1,0 +1,380 @@
+{
+	"info": {
+		"_postman_id": "bf6b9501-d945-4b55-bb3b-862bbc33b700",
+		"name": "Simple Grocery Store API - Automation",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27368296",
+		"_collection_link": "https://www.postman.com/grey-equinox-569322/workspace/grocery-store/collection/27368296-bf6b9501-d945-4b55-bb3b-862bbc33b700?action=share&source=collection_link&creator=27368296"
+	},
+	"item": [
+		{
+			"name": "1. Authenticate/Register",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"const response = pm.response.json();",
+							"",
+							"pm.test(\"Access token exists\", function () {",
+							"    pm.expect(response).to.have.property(\"accessToken\");",
+							"});",
+							"",
+							"// Save token for next requests",
+							"pm.environment.set(\"token\", response.accessToken);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"clientName\": \"{{$randomFullName}}\",\n  \"clientEmail\": \"{{$randomEmail}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api-clients",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api-clients"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2 . Get Products",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const products = pm.response.json();",
+							"",
+							"pm.test(\"Products list is not empty\", function () {",
+							"    pm.expect(products.length).to.be.greaterThan(0);",
+							"});",
+							"",
+							"pm.test(\"Each product has id and name property\", function () {",
+							"    pm.expect(products[19]).to.have.property(\"id\"); // 19'th product have this property",
+							"    pm.expect(products[0]).to.have.property(\"name\");",
+							"});",
+							"",
+							"//Saving the first product ID dynamically as a variable.",
+							"pm.environment.set(\"productId\", products[3].id);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/products",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"products"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Creating a new cart",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response=pm.response.json()",
+							"",
+							"pm.test(\"Basic Tests for Status,Object, cartId and String\", function () {",
+							"    pm.response.to.have.status(201);",
+							"    pm.expect(response).to.be.an(\"Object\")",
+							"    pm.expect(response).to.haveOwnProperty('cartId')",
+							"    pm.expect(response.cartId).to.be.a('String')",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							"pm.environment.set(\"cartId\", response.cartId);",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/carts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"carts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Adding an item to cart",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response=pm.response.json()",
+							"",
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('Basic test', function () {",
+							"    pm.expect(response).to.be.a('Object')",
+							"    pm.expect(response.created).to.be.true",
+							"    pm.expect(response.itemId).to.be.a('Number')",
+							"})",
+							"",
+							"pm.test(\"Item added successfully\", function () {",
+							"    pm.expect(response).to.have.property(\"created\", true);",
+							"    pm.expect(response).to.have.property(\"itemId\");",
+							"})",
+							"",
+							"pm.environment.set('itemId',response.itemId)"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"productId\": {{productId}}\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/carts/:cartId/items",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"carts",
+						":cartId",
+						"items"
+					],
+					"variable": [
+						{
+							"key": "cartId",
+							"value": "{{cartId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Create Order",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"const jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Order ID is present\", function () {",
+							"    pm.expect(jsonData).to.have.property(\"orderId\");",
+							"});",
+							"",
+							"// Save orderId",
+							"pm.environment.set(\"orderId\", jsonData.orderId);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"cartId\": \"{{cartId}}\",\n  \"customerName\": \"{{$randomFullName}}\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/orders",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"orders"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Get Order Details",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const order = pm.response.json();",
+							"",
+							"pm.test(\"Customer name is present\", function () {",
+							"    pm.expect(order).to.have.property(\"customerName\");",
+							"});",
+							"",
+							"pm.test(\"Product ID is present in items\", function () {",
+							"    pm.expect(order.items[0]).to.have.property(\"productId\");",
+							"});",
+							"",
+							"pm.test(\"Quantity is 1\", function () {",
+							"    pm.expect(order.items[0].quantity).to.eql(1);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/orders/:orderId",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"orders",
+						":orderId"
+					],
+					"variable": [
+						{
+							"key": "orderId",
+							"value": "{{orderId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://simple-grocery-store-api.click",
+			"type": "string"
+		}
+	]
+}
